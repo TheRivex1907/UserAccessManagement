@@ -6,23 +6,92 @@ import com.therivex1907.accessmanagement.dto.UserResponse;
 import com.therivex1907.accessmanagement.dto.UserSearchFilter;
 import com.therivex1907.accessmanagement.entity.Role;
 import com.therivex1907.accessmanagement.entity.User;
+import com.therivex1907.accessmanagement.repository.RoleRepository;
 import com.therivex1907.accessmanagement.repository.UserRepository;
 import com.therivex1907.accessmanagement.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private RoleRepository roleRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
+    @Transactional
     @Override
     public BaseResponse<UserResponse> createUser(UserRequest userRequest) {
-        return null;
+        Optional<User> user = userRepository.findByEmail(userRequest.getEmail());
+        if (user.isPresent()) {
+            throw new RuntimeException("Ya existe un usuario con ese correo");
+        }
+
+        Set<Role> roles = new HashSet<>(roleRepository.findAllById(userRequest.getRolesId()));
+        if (roles.size() != userRequest.getRolesId().size()) {
+            throw new RuntimeException("Uno o más roles no existen");
+        }
+        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
+        User newUser = new User();
+        newUser.setFirstName(userRequest.getFirstName());
+        newUser.setLastName(userRequest.getLastName());
+        newUser.setEmail(userRequest.getEmail());
+        newUser.setPassword(encodedPassword);
+        newUser.setPhoneNumber(userRequest.getPhoneNumber());
+        newUser.setCreatedAt(LocalDateTime.now());
+        newUser.setRolesAssigned(roles);
+        newUser.setIsActive(true);
+        userRepository.save(newUser);
+
+        UserResponse userModified = mapToResponse(newUser);
+        return BaseResponse.<UserResponse>builder()
+                .status(HttpStatus.CREATED.value())
+                .message("Usuario creado")
+                .data(userModified)
+                .build();
+    }
+
+    @Transactional
+    @Override
+    public BaseResponse<UserResponse> updateUser(Integer id, UserRequest userRequest) {
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe aquel usuario"));
+        Optional<User> userExistEmail = userRepository.findByEmail(userRequest.getEmail());
+        if (userExistEmail.isPresent() && !userExistEmail.get().getId().equals(id)) {
+            throw new RuntimeException("Ya existe un usuario con ese correo");
+        }
+        Set<Role> newRoles = new HashSet<>(roleRepository.findAllById(userRequest.getRolesId()));
+        if (newRoles.size() != userRequest.getRolesId().size()) {
+            throw new RuntimeException("Uno o más roles no existen");
+        }
+        user.setFirstName(userRequest.getFirstName());
+        user.setLastName(userRequest.getLastName());
+        if (userRequest.getPassword() != null && !userRequest.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
+        }
+        user.setEmail(userRequest.getEmail());
+        user.setPhoneNumber(userRequest.getPhoneNumber());
+        user.setRolesAssigned(newRoles);
+        user.setUpdateAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        UserResponse userModified = mapToResponse(user);
+        return BaseResponse.<UserResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message("Usuario modificado")
+                .data(userModified)
+                .build();
     }
 
     @Override
@@ -80,7 +149,7 @@ public class UserServiceImpl implements UserService {
         user.setIsActive(false);
         userRepository.save(user);
         return BaseResponse.<Void>builder()
-                .status(HttpStatus.NO_CONTENT.value())
+                .status(HttpStatus.OK.value())
                 .message("Usuario eliminado")
                 .data(null)
                 .build();
@@ -89,8 +158,9 @@ public class UserServiceImpl implements UserService {
     private UserResponse mapToResponse(User user) {
         UserResponse userResponse = new UserResponse();
         userResponse.setId(user.getId());
+        userResponse.setName(user.getFirstName() + " " + user.getLastName());
         userResponse.setEmail(user.getEmail());
-        userResponse.setPhoneNumber(user.getEmail());
+        userResponse.setPhoneNumber(user.getPhoneNumber());
         userResponse.setIsActive(user.getIsActive());
         userResponse.setCreatedAt(user.getCreatedAt());
         userResponse.setUpdateAt(user.getUpdateAt());

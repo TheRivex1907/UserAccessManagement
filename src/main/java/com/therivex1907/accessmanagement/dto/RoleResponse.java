@@ -6,12 +6,9 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
-public class UserResponse {
-    private Integer id;
+public class RoleResponse {
     private String name;
-    private String email;
-    private String phoneNumber;
-    private Set<Integer> rolesId;
+    private Set<Integer> permissions;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updateAt;

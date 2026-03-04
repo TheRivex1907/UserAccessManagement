@@ -17,6 +17,7 @@ public interface UserRepository extends JpaRepository<User, Integer> {
         (:email is null or lower(u.email) LIKE LOWER(CONCAT('%', :email, '%'))) and u.isActive = true
     """)
     List<User> searchUser(@Param("lastName")String lastName, @Param("email")String email);
+    Optional<User> findByEmail(String email);
     Boolean existsByEmail(String email);
     List<User> findByIsActiveTrue();
     //    Optional<User> findByLastNameContainingIgnoreCase(String name);

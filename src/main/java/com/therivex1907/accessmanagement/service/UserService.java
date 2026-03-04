@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface UserService {
     BaseResponse<UserResponse> createUser(UserRequest userRequest);
+    BaseResponse<UserResponse> updateUser(Integer id, UserRequest userRequest);
     BaseResponse<List<UserResponse>> getAllUsers();
     BaseResponse<UserResponse> getById(Integer id);
 //    BaseResponse<UserResponse> getByEmail(String email);
