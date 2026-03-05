@@ -77,6 +77,28 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    public BaseResponse<RoleResponse> getById(Integer id) {
+        Role role = roleRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe el rol con ese id"));
+        RoleResponse roleModified = mapToResponse(role);
+        return BaseResponse.<RoleResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message("Rol encontrado")
+                .data(roleModified)
+                .build();
+    }
+
+    @Override
+    public BaseResponse<RoleResponse> getByName(String name) {
+        Role role = roleRepository.findByName(name).orElseThrow(()-> new RuntimeException("No existe el ron con ese nombre"));
+        RoleResponse roleModified = mapToResponse(role);
+        return BaseResponse.<RoleResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message("Rol encontrado")
+                .data(roleModified)
+                .build();
+    }
+
+    @Override
     public BaseResponse<Void> deleteRole(Integer id) {
         Role role = roleRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe aquel rol"));
         role.setIsActive(false);
@@ -90,6 +112,7 @@ public class RoleServiceImpl implements RoleService {
 
     private RoleResponse mapToResponse(Role role) {
         RoleResponse roleResponse = new RoleResponse();
+        roleResponse.setId(role.getId());
         roleResponse.setName(role.getName());
         roleResponse.setCreatedAt(role.getCreatedAt());
         roleResponse.setUpdateAt(role.getUpdatedAt());

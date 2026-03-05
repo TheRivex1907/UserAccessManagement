@@ -3,14 +3,12 @@ package com.therivex1907.accessmanagement.dto;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Data
-public class RoleResponse {
+public class PermissionResponse {
     private Integer id;
     private String name;
-    private Set<Integer> permissions;
     private Boolean isActive;
     private LocalDateTime createdAt;
-    private LocalDateTime updateAt;
+    private LocalDateTime updatedAt;
 }
