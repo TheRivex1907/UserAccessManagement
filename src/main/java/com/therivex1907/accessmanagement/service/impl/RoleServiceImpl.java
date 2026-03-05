@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -77,6 +78,20 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    public BaseResponse<List<RoleResponse>> getAll() {
+        List<Role> roles = roleRepository.findByIsActiveTrue();
+        if (roles.isEmpty()) {
+            throw new RuntimeException("No existe informacion disponible");
+        }
+        List<RoleResponse> rolesModified = roles.stream().map(this::mapToResponse).toList();
+        return BaseResponse.<List<RoleResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Roles encontrados")
+                .data(rolesModified)
+                .build();
+    }
+
+    @Override
     public BaseResponse<RoleResponse> getById(Integer id) {
         Role role = roleRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe el rol con ese id"));
         RoleResponse roleModified = mapToResponse(role);
@@ -89,7 +104,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public BaseResponse<RoleResponse> getByName(String name) {
-        Role role = roleRepository.findByName(name).orElseThrow(()-> new RuntimeException("No existe el ron con ese nombre"));
+        Role role = roleRepository.findByName(name).orElseThrow(()-> new RuntimeException("No existe el rol con ese nombre"));
         RoleResponse roleModified = mapToResponse(role);
         return BaseResponse.<RoleResponse>builder()
                 .status(HttpStatus.OK.value())

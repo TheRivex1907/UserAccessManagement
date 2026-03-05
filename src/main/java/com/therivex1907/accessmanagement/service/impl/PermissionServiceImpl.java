@@ -49,7 +49,6 @@ public class PermissionServiceImpl implements PermissionService {
             throw new RuntimeException("Ya existe un permiso con ese nombre");
         }
         permission.setName(permissionRequest.getName());
-        permission.setIsActive(permissionRequest.getIsActive());
         permission.setUpdatedAt(LocalDateTime.now());
         permissionRepository.save(permission);
         PermissionResponse permissionModified = mapToResponse(permission);

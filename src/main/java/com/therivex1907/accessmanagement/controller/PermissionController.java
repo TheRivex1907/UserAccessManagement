@@ -1,0 +1,57 @@
+package com.therivex1907.accessmanagement.controller;
+
+import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.dto.PermissionRequest;
+import com.therivex1907.accessmanagement.dto.PermissionResponse;
+import com.therivex1907.accessmanagement.service.PermissionService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/v1/permission")
+public class PermissionController {
+    @Autowired
+    private PermissionService permissionService;
+
+    @GetMapping("{id}")
+    public ResponseEntity<BaseResponse<PermissionResponse>> getById(@PathVariable Integer id) {
+        try {
+            BaseResponse<PermissionResponse> response = permissionService.getById(id);
+            return ResponseEntity.status(response.getStatus()).body(response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @PostMapping
+    public ResponseEntity<BaseResponse<PermissionResponse>> createPermission(@Valid @RequestBody PermissionRequest permissionRequest) {
+        try {
+            BaseResponse<PermissionResponse> response = permissionService.createPermission(permissionRequest);
+            return ResponseEntity.status(response.getStatus()).body(response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<BaseResponse<PermissionResponse>> updatePermission(@PathVariable Integer id, PermissionRequest permissionRequest) {
+        try {
+            BaseResponse<PermissionResponse> response = permissionService.updatePermission(id, permissionRequest);
+            return ResponseEntity.status(response.getStatus()).body(response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<BaseResponse<Void>> deletePermission(@PathVariable Integer id) {
+        try {
+            BaseResponse<Void> response = permissionService.deletePermission(id);
+            return ResponseEntity.status(response.getStatus()).body(response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
