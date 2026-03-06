@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.Set;
 
 @Data
-public class RoleRequest {
+public class RoleUpdateRequest {
     private String name;
     private Set<Integer> permissionsId;
 }

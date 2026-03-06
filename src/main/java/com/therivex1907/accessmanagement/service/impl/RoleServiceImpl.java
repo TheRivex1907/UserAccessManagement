@@ -1,10 +1,12 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
-import com.therivex1907.accessmanagement.dto.role.RoleRequest;
+import com.therivex1907.accessmanagement.dto.role.RoleCreateRequest;
 import com.therivex1907.accessmanagement.dto.role.RoleResponse;
+import com.therivex1907.accessmanagement.dto.role.RoleUpdateRequest;
 import com.therivex1907.accessmanagement.entity.Permission;
 import com.therivex1907.accessmanagement.entity.Role;
+import com.therivex1907.accessmanagement.mapper.RoleMapper;
 import com.therivex1907.accessmanagement.repository.PermissionRepository;
 import com.therivex1907.accessmanagement.repository.RoleRepository;
 import com.therivex1907.accessmanagement.service.RoleService;
@@ -26,23 +28,30 @@ public class RoleServiceImpl implements RoleService {
     private RoleRepository roleRepository;
     @Autowired
     private PermissionRepository permissionRepository;
+    @Autowired
+    private RoleMapper roleMapper;
 
     @Transactional
     @Override
-    public BaseResponse<RoleResponse> createRole(RoleRequest roleRequest) {
-        Optional<Role> roleExist = roleRepository.findByName(roleRequest.getName());
+    public BaseResponse<RoleResponse> createRole(RoleCreateRequest roleRequest) {
+        Optional<Role> roleExist = roleRepository.findByNameContainingIgnoreCase(roleRequest.getName());
         if (roleExist.isPresent()) {
             throw new RuntimeException("Ya existe un rol con ese nombre");
         }
-        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(roleRequest.getPermissionsId()));
-        if (permissions.size() != roleRequest.getPermissionsId().size()) {
-            throw new RuntimeException("Uno o más permisos no existen");
-        }
         Role newRole = new Role();
+        if (roleRequest.getPermissionsId() != null && !roleRequest.getPermissionsId().isEmpty()) {
+            Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(roleRequest.getPermissionsId()));
+            if (permissions.size() != roleRequest.getPermissionsId().size()) {
+                throw new RuntimeException("Uno o más permisos no existen");
+            }
+            newRole.setPermissionsAssigned(permissions);
+        } else {
+            newRole.setPermissionsAssigned(new HashSet<>());
+        }
         newRole.setName(roleRequest.getName());
         newRole.setCreatedAt(LocalDateTime.now());
         newRole.setIsActive(true);
-        newRole.setPermissionsAssigned(permissions);
+        //newRole.setPermissionsAssigned(permissions);
         roleRepository.save(newRole);
 
         RoleResponse roleModified = mapToResponse(newRole);
@@ -55,19 +64,24 @@ public class RoleServiceImpl implements RoleService {
 
     @Transactional
     @Override
-    public BaseResponse<RoleResponse> updateRole(Integer id, RoleRequest roleRequest) {
+    public BaseResponse<RoleResponse> updateRole(Integer id, RoleUpdateRequest roleRequest) {
         Role role = roleRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe un rol con ese id"));
-        Optional<Role> roleExist = roleRepository.findByName(roleRequest.getName());
-        if (roleExist.isPresent() && !roleExist.get().getId().equals(id)) {
-             throw new RuntimeException("Ya existe un rol con ese nombre");
+        if (roleRequest.getName() != null) {
+            Optional<Role> roleExist = roleRepository.findByNameContainingIgnoreCase(roleRequest.getName());
+            if (roleExist.isPresent() && !roleExist.get().getId().equals(id)) {
+                throw new RuntimeException("Ya existe un rol con ese nombre");
+            }
+            role.setName(roleRequest.getName());
         }
-        Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(roleRequest.getPermissionsId()));
-        if (permissions.size() != roleRequest.getPermissionsId().size()) {
-            throw new RuntimeException("Uno o mas permisos no existen");
+        if (roleRequest.getPermissionsId() != null && !roleRequest.getPermissionsId().isEmpty()) {
+            Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(roleRequest.getPermissionsId()));
+            if (permissions.size() != roleRequest.getPermissionsId().size()) {
+                throw new RuntimeException("Uno o mas permisos no existen");
+            }
+            role.setPermissionsAssigned(permissions);
         }
-        role.setName(roleRequest.getName());
         role.setUpdatedAt(LocalDateTime.now());
-        role.setPermissionsAssigned(permissions);
+        roleMapper.updateRoleFromDto(roleRequest, role);
         roleRepository.save(role);
         RoleResponse roleModified = mapToResponse(role);
         return BaseResponse.<RoleResponse>builder()
@@ -101,7 +115,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     public BaseResponse<RoleResponse> getByName(String name) {
-        Role role = roleRepository.findByName(name).orElseThrow(()-> new RuntimeException("No existe el rol con ese nombre"));
+        Role role = roleRepository.findByNameContainingIgnoreCase(name).orElseThrow(()-> new RuntimeException("No existe el rol con ese nombre"));
         RoleResponse roleModified = mapToResponse(role);
         return BaseResponse.<RoleResponse>builder()
                 .status(HttpStatus.OK.value())
@@ -113,7 +127,11 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public BaseResponse<Void> deleteRole(Integer id) {
         Role role = roleRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe aquel rol"));
+        if (!role.getIsActive()) {
+            throw new RuntimeException("El rol ya esta eliminado");
+        }
         role.setIsActive(false);
+        role.setUpdatedAt(LocalDateTime.now());
         roleRepository.save(role);
         return BaseResponse.<Void>builder()
                 .status(HttpStatus.OK.value())

@@ -43,19 +43,23 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Ya existe un usuario con ese correo");
         }
 
-        Set<Role> roles = new HashSet<>(roleRepository.findAllById(userRequest.getRolesId()));
-        if (roles.size() != userRequest.getRolesId().size()) {
-            throw new RuntimeException("Uno o más roles no existen");
-        }
-        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
         User newUser = new User();
+        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
+        if (userRequest.getRolesId() != null && !userRequest.getRolesId().isEmpty()) {
+            Set<Role> roles = new HashSet<>(roleRepository.findAllById(userRequest.getRolesId()));
+            if (roles.size() != userRequest.getRolesId().size()) {
+                throw new RuntimeException("Uno o más roles no existen");
+            }
+            newUser.setRolesAssigned(roles);
+        } else {
+            newUser.setRolesAssigned(new HashSet<>());
+        }
         newUser.setFirstName(userRequest.getFirstName());
         newUser.setLastName(userRequest.getLastName());
         newUser.setEmail(userRequest.getEmail());
         newUser.setPassword(encodedPassword);
         newUser.setPhoneNumber(userRequest.getPhoneNumber());
         newUser.setCreatedAt(LocalDateTime.now());
-        newUser.setRolesAssigned(roles);
         newUser.setIsActive(true);
         userRepository.save(newUser);
 
@@ -125,7 +129,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public BaseResponse<List<UserResponse>> searchUsers(UserSearchFilter filter) {
         String lastName = filter.getLastName(), email = filter.getEmail();
-        if (lastName != null && !lastName.isBlank()) lastName = "%" + lastName.toLowerCase() + "%";;
+        if (lastName != null && !lastName.isBlank()) lastName = "%" + lastName.toLowerCase() + "%";
         if (email != null && !email.isBlank()) email = "%" + email.toLowerCase() + "%";
         List<User> users = userRepository.searchUser(lastName, email);
         if (users.isEmpty())
@@ -145,6 +149,7 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("El usuario ya se encuentra eliminado");
         }
         user.setIsActive(false);
+        user.setUpdateAt(LocalDateTime.now());
         userRepository.save(user);
         return BaseResponse.<Void>builder()
                 .status(HttpStatus.OK.value())

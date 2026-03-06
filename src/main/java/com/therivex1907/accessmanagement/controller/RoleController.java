@@ -1,8 +1,9 @@
 package com.therivex1907.accessmanagement.controller;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
-import com.therivex1907.accessmanagement.dto.role.RoleRequest;
+import com.therivex1907.accessmanagement.dto.role.RoleCreateRequest;
 import com.therivex1907.accessmanagement.dto.role.RoleResponse;
+import com.therivex1907.accessmanagement.dto.role.RoleUpdateRequest;
 import com.therivex1907.accessmanagement.service.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +49,7 @@ public class RoleController {
     }
 
     @PostMapping
-    public ResponseEntity<BaseResponse<RoleResponse>> createRole(@Valid @RequestBody RoleRequest roleRequest) {
+    public ResponseEntity<BaseResponse<RoleResponse>> createRole(@Valid @RequestBody RoleCreateRequest roleRequest) {
         try {
             BaseResponse<RoleResponse> response = roleService.createRole(roleRequest);
             return ResponseEntity.status(response.getStatus()).body(response);
@@ -57,8 +58,8 @@ public class RoleController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<BaseResponse<RoleResponse>> updateRole(@PathVariable Integer id, @Valid @RequestBody RoleRequest roleRequest) {
+    @PatchMapping("/{id}")
+    public ResponseEntity<BaseResponse<RoleResponse>> updateRole(@PathVariable Integer id, @Valid @RequestBody RoleUpdateRequest roleRequest) {
         try {
             BaseResponse<RoleResponse> response = roleService.updateRole(id, roleRequest);
             return ResponseEntity.status(response.getStatus()).body(response);

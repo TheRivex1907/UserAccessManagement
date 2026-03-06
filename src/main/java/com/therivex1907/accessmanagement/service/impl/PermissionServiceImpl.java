@@ -1,8 +1,9 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
-import com.therivex1907.accessmanagement.dto.permission.PermissionRequest;
+import com.therivex1907.accessmanagement.dto.permission.PermissionCreateRequest;
 import com.therivex1907.accessmanagement.dto.permission.PermissionResponse;
+import com.therivex1907.accessmanagement.dto.permission.PermissionUpdateRequest;
 import com.therivex1907.accessmanagement.entity.Permission;
 import com.therivex1907.accessmanagement.repository.PermissionRepository;
 import com.therivex1907.accessmanagement.service.PermissionService;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -21,7 +23,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Transactional
     @Override
-    public BaseResponse<PermissionResponse> createPermission(PermissionRequest permissionRequest) {
+    public BaseResponse<PermissionResponse> createPermission(PermissionCreateRequest permissionRequest) {
         Optional<Permission> permission = permissionRepository.findByNameIgnoreCase(permissionRequest.getName());
         if (permission.isPresent()) {
             throw new RuntimeException("Ya existe un permiso con ese nombre");
@@ -42,7 +44,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Transactional
     @Override
-    public BaseResponse<PermissionResponse> updatePermission(Integer id, PermissionRequest permissionRequest) {
+    public BaseResponse<PermissionResponse> updatePermission(Integer id, PermissionUpdateRequest permissionRequest) {
         Permission permission = permissionRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe el permiso especificado"));
         Optional<Permission> permissionExist = permissionRepository.findByNameIgnoreCase(permissionRequest.getName());
         if (permissionExist.isPresent() && !permissionExist.get().getId().equals(id)) {
@@ -57,6 +59,20 @@ public class PermissionServiceImpl implements PermissionService {
                 .status(HttpStatus.OK.value())
                 .message("Permiso modificado")
                 .data(permissionModified)
+                .build();
+    }
+
+    @Override
+    public BaseResponse<List<PermissionResponse>> getAllPermissions() {
+        List<Permission> permissions = permissionRepository.findByIsActiveTrue();
+        if (permissions.isEmpty()) {
+            throw new RuntimeException("No hay informacion disponible");
+        }
+        List<PermissionResponse> permissionsModified = permissions.stream().map(this::mapToResponse).toList();
+        return BaseResponse.<List<PermissionResponse>>builder()
+                .status(HttpStatus.OK.value())
+                .message("Informacion encontrada")
+                .data(permissionsModified)
                 .build();
     }
 
