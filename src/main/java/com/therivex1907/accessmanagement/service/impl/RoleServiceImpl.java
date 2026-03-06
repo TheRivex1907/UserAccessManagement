@@ -1,8 +1,8 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
-import com.therivex1907.accessmanagement.dto.RoleRequest;
-import com.therivex1907.accessmanagement.dto.RoleResponse;
+import com.therivex1907.accessmanagement.dto.role.RoleRequest;
+import com.therivex1907.accessmanagement.dto.role.RoleResponse;
 import com.therivex1907.accessmanagement.entity.Permission;
 import com.therivex1907.accessmanagement.entity.Role;
 import com.therivex1907.accessmanagement.repository.PermissionRepository;
@@ -80,13 +80,10 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public BaseResponse<List<RoleResponse>> getAll() {
         List<Role> roles = roleRepository.findByIsActiveTrue();
-        if (roles.isEmpty()) {
-            throw new RuntimeException("No existe informacion disponible");
-        }
         List<RoleResponse> rolesModified = roles.stream().map(this::mapToResponse).toList();
         return BaseResponse.<List<RoleResponse>>builder()
                 .status(HttpStatus.OK.value())
-                .message("Roles encontrados")
+                .message("Ok")
                 .data(rolesModified)
                 .build();
     }

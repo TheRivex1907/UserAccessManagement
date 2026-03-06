@@ -13,8 +13,8 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findById(Integer id);
     @Query("""
-    SELECT u FROM User u WHERE (:lastName is null or lower(u.lastName) LIKE LOWER(CONCAT('%', :lastName, '%'))) and
-        (:email is null or lower(u.email) LIKE LOWER(CONCAT('%', :email, '%'))) and u.isActive = true
+    SELECT u FROM User u WHERE (:lastName is null or lower(u.lastName) LIKE :lastName) and
+        (:email is null or lower(u.email) LIKE :email) and u.isActive = true
     """)
     List<User> searchUser(@Param("lastName")String lastName, @Param("email")String email);
     Optional<User> findByEmail(String email);

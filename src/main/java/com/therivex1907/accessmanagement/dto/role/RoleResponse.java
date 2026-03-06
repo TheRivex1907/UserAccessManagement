@@ -1,4 +1,4 @@
-package com.therivex1907.accessmanagement.dto;
+package com.therivex1907.accessmanagement.dto.role;
 
 import lombok.Data;
 
@@ -6,12 +6,10 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data
-public class UserResponse {
+public class RoleResponse {
     private Integer id;
     private String name;
-    private String email;
-    private String phoneNumber;
-    private Set<Integer> rolesId;
+    private Set<Integer> permissions;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updateAt;

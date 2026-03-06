@@ -1,8 +1,8 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
-import com.therivex1907.accessmanagement.dto.PermissionRequest;
-import com.therivex1907.accessmanagement.dto.PermissionResponse;
+import com.therivex1907.accessmanagement.dto.permission.PermissionRequest;
+import com.therivex1907.accessmanagement.dto.permission.PermissionResponse;
 import com.therivex1907.accessmanagement.entity.Permission;
 import com.therivex1907.accessmanagement.repository.PermissionRepository;
 import com.therivex1907.accessmanagement.service.PermissionService;

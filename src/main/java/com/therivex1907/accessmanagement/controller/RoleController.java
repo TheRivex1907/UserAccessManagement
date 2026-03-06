@@ -1,8 +1,8 @@
 package com.therivex1907.accessmanagement.controller;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
-import com.therivex1907.accessmanagement.dto.RoleRequest;
-import com.therivex1907.accessmanagement.dto.RoleResponse;
+import com.therivex1907.accessmanagement.dto.role.RoleRequest;
+import com.therivex1907.accessmanagement.dto.role.RoleResponse;
 import com.therivex1907.accessmanagement.service.RoleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;

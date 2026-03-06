@@ -1,11 +1,13 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
-import com.therivex1907.accessmanagement.dto.UserRequest;
-import com.therivex1907.accessmanagement.dto.UserResponse;
-import com.therivex1907.accessmanagement.dto.UserSearchFilter;
+import com.therivex1907.accessmanagement.dto.user.UserCreateRequest;
+import com.therivex1907.accessmanagement.dto.user.UserResponse;
+import com.therivex1907.accessmanagement.dto.user.UserSearchFilter;
+import com.therivex1907.accessmanagement.dto.user.UserUpdateRequest;
 import com.therivex1907.accessmanagement.entity.Role;
 import com.therivex1907.accessmanagement.entity.User;
+import com.therivex1907.accessmanagement.mapper.UserMapper;
 import com.therivex1907.accessmanagement.repository.RoleRepository;
 import com.therivex1907.accessmanagement.repository.UserRepository;
 import com.therivex1907.accessmanagement.service.UserService;
@@ -30,10 +32,12 @@ public class UserServiceImpl implements UserService {
     private RoleRepository roleRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserMapper userMapper;
 
     @Transactional
     @Override
-    public BaseResponse<UserResponse> createUser(UserRequest userRequest) {
+    public BaseResponse<UserResponse> createUser(UserCreateRequest userRequest) {
         Optional<User> user = userRepository.findByEmail(userRequest.getEmail());
         if (user.isPresent()) {
             throw new RuntimeException("Ya existe un usuario con ese correo");
@@ -65,24 +69,26 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public BaseResponse<UserResponse> updateUser(Integer id, UserRequest userRequest) {
+    public BaseResponse<UserResponse> updateUser(Integer id, UserUpdateRequest userRequest) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe aquel usuario"));
-        Optional<User> userExistEmail = userRepository.findByEmail(userRequest.getEmail());
-        if (userExistEmail.isPresent() && !userExistEmail.get().getId().equals(id)) {
-            throw new RuntimeException("Ya existe un usuario con ese correo");
+        userMapper.updateUserFromDto(userRequest, user);
+        if(userRequest.getEmail() != null) {
+            Optional<User> userExistEmail = userRepository.findByEmail(userRequest.getEmail());
+            if (userExistEmail.isPresent() && !userExistEmail.get().getId().equals(id)) {
+                throw new RuntimeException("Ya existe un usuario con ese correo");
+            }
+            user.setEmail(user.getEmail());
         }
-        Set<Role> newRoles = new HashSet<>(roleRepository.findAllById(userRequest.getRolesId()));
-        if (newRoles.size() != userRequest.getRolesId().size()) {
-            throw new RuntimeException("Uno o más roles no existen");
-        }
-        user.setFirstName(userRequest.getFirstName());
-        user.setLastName(userRequest.getLastName());
         if (userRequest.getPassword() != null && !userRequest.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
         }
-        user.setEmail(userRequest.getEmail());
-        user.setPhoneNumber(userRequest.getPhoneNumber());
-        user.setRolesAssigned(newRoles);
+        if (userRequest.getRolesId() != null && !userRequest.getRolesId().isEmpty()) {
+            Set<Role> newRoles = new HashSet<>(roleRepository.findAllById(userRequest.getRolesId()));
+            if (newRoles.size() != userRequest.getRolesId().size()) {
+                throw new RuntimeException("Uno o más roles no existen");
+            }
+            user.setRolesAssigned(newRoles);
+        }
         user.setUpdateAt(LocalDateTime.now());
         userRepository.save(user);
 
@@ -118,7 +124,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public BaseResponse<List<UserResponse>> searchUsers(UserSearchFilter filter) {
-        List<User> users = userRepository.searchUser(filter.getLastName(), filter.getEmail());
+        String lastName = filter.getLastName(), email = filter.getEmail();
+        if (lastName != null && !lastName.isBlank()) lastName = "%" + lastName.toLowerCase() + "%";;
+        if (email != null && !email.isBlank()) email = "%" + email.toLowerCase() + "%";
+        List<User> users = userRepository.searchUser(lastName, email);
         if (users.isEmpty())
             throw new RuntimeException("No se encontró la informacion deseada");
         List<UserResponse> usersModified = users.stream().map(this::mapToResponse).toList();
@@ -128,17 +137,6 @@ public class UserServiceImpl implements UserService {
                 .data(usersModified)
                 .build();
     }
-
-//    @Override
-//    public BaseResponse<UserResponse> getByEmail(String email) {
-//        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("No existe el usuario con ese correo"));
-//        UserResponse userModified = mapToResponse(user);
-//        return BaseResponse.<UserResponse>builder()
-//                .status(HttpStatus.OK.value())
-//                .message("Usuario encontrado")
-//                .data(userModified)
-//                .build();
-//    }
 
     @Override
     public BaseResponse<Void> deleteById(Integer id) {

@@ -1,10 +1,10 @@
 package com.therivex1907.accessmanagement.controller;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
-import com.therivex1907.accessmanagement.dto.UserRequest;
-import com.therivex1907.accessmanagement.dto.UserResponse;
-import com.therivex1907.accessmanagement.dto.UserSearchFilter;
-import com.therivex1907.accessmanagement.entity.User;
+import com.therivex1907.accessmanagement.dto.user.UserCreateRequest;
+import com.therivex1907.accessmanagement.dto.user.UserResponse;
+import com.therivex1907.accessmanagement.dto.user.UserSearchFilter;
+import com.therivex1907.accessmanagement.dto.user.UserUpdateRequest;
 import com.therivex1907.accessmanagement.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ public class UserController {
     private UserService userService;
 
     @PostMapping
-    public ResponseEntity<BaseResponse<UserResponse>> createUser(@Valid @RequestBody UserRequest user) {
+    public ResponseEntity<BaseResponse<UserResponse>> createUser(@Valid @RequestBody UserCreateRequest user) {
         try {
             BaseResponse<UserResponse> response = userService.createUser(user);
             return ResponseEntity.status(response.getStatus()).body(response);
@@ -30,8 +30,8 @@ public class UserController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<BaseResponse<UserResponse>> updateUser(@PathVariable Integer id, @Valid @RequestBody UserRequest user) {
+    @PatchMapping("/{id}")
+    public ResponseEntity<BaseResponse<UserResponse>> updateUser(@PathVariable Integer id, @Valid @RequestBody UserUpdateRequest user) {
         try {
             BaseResponse<UserResponse> response = userService.updateUser(id, user);
             return ResponseEntity.status(response.getStatus()).body(response);

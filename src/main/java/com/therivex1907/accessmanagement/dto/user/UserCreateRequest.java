@@ -1,8 +1,7 @@
-package com.therivex1907.accessmanagement.dto;
+package com.therivex1907.accessmanagement.dto.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,9 +9,9 @@ import lombok.NoArgsConstructor;
 import java.util.Set;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class UserRequest {
+@AllArgsConstructor
+public class UserCreateRequest {
     @NotBlank
     private String firstName;
     @NotBlank
@@ -20,6 +19,7 @@ public class UserRequest {
     @Email
     @NotBlank
     private String email;
+    @NotBlank
     private String password;
     @NotBlank
     private String phoneNumber;

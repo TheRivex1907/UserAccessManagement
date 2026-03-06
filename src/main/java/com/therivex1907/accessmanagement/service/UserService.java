@@ -1,15 +1,16 @@
 package com.therivex1907.accessmanagement.service;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
-import com.therivex1907.accessmanagement.dto.UserRequest;
-import com.therivex1907.accessmanagement.dto.UserResponse;
-import com.therivex1907.accessmanagement.dto.UserSearchFilter;
+import com.therivex1907.accessmanagement.dto.user.UserCreateRequest;
+import com.therivex1907.accessmanagement.dto.user.UserResponse;
+import com.therivex1907.accessmanagement.dto.user.UserSearchFilter;
+import com.therivex1907.accessmanagement.dto.user.UserUpdateRequest;
 
 import java.util.List;
 
 public interface UserService {
-    BaseResponse<UserResponse> createUser(UserRequest userRequest);
-    BaseResponse<UserResponse> updateUser(Integer id, UserRequest userRequest);
+    BaseResponse<UserResponse> createUser(UserCreateRequest userRequest);
+    BaseResponse<UserResponse> updateUser(Integer id, UserUpdateRequest userRequest);
     BaseResponse<List<UserResponse>> getAllUsers();
     BaseResponse<UserResponse> getById(Integer id);
 //    BaseResponse<UserResponse> getByEmail(String email);
