@@ -20,51 +20,31 @@ public class PermissionController {
 
     @GetMapping
     public ResponseEntity<BaseResponse<List<PermissionResponse>>> findAll() {
-        try {
-            BaseResponse<List<PermissionResponse>> response = permissionService.getAllPermissions();
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<List<PermissionResponse>> response = permissionService.getAllPermissions();
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @GetMapping("{id}")
     public ResponseEntity<BaseResponse<PermissionResponse>> getById(@PathVariable Integer id) {
-        try {
-            BaseResponse<PermissionResponse> response = permissionService.getById(id);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<PermissionResponse> response = permissionService.getById(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PostMapping
     public ResponseEntity<BaseResponse<PermissionResponse>> createPermission(@Valid @RequestBody PermissionCreateRequest permissionRequest) {
-        try {
-            BaseResponse<PermissionResponse> response = permissionService.createPermission(permissionRequest);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<PermissionResponse> response = permissionService.createPermission(permissionRequest);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<BaseResponse<PermissionResponse>> updatePermission(@PathVariable Integer id, @Valid @RequestBody PermissionUpdateRequest permissionRequest) {
-        try {
-            BaseResponse<PermissionResponse> response = permissionService.updatePermission(id, permissionRequest);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<PermissionResponse> response = permissionService.updatePermission(id, permissionRequest);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<BaseResponse<Void>> deletePermission(@PathVariable Integer id) {
-        try {
-            BaseResponse<Void> response = permissionService.deletePermission(id);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<Void> response = permissionService.deletePermission(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

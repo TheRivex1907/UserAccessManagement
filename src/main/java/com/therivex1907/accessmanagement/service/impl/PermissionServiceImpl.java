@@ -5,6 +5,9 @@ import com.therivex1907.accessmanagement.dto.permission.PermissionCreateRequest;
 import com.therivex1907.accessmanagement.dto.permission.PermissionResponse;
 import com.therivex1907.accessmanagement.dto.permission.PermissionUpdateRequest;
 import com.therivex1907.accessmanagement.entity.Permission;
+import com.therivex1907.accessmanagement.exception.BadRequestException;
+import com.therivex1907.accessmanagement.exception.DuplicateResourceException;
+import com.therivex1907.accessmanagement.exception.ResourceNotFoundException;
 import com.therivex1907.accessmanagement.repository.PermissionRepository;
 import com.therivex1907.accessmanagement.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +29,7 @@ public class PermissionServiceImpl implements PermissionService {
     public BaseResponse<PermissionResponse> createPermission(PermissionCreateRequest permissionRequest) {
         Optional<Permission> permission = permissionRepository.findByNameIgnoreCase(permissionRequest.getName());
         if (permission.isPresent()) {
-            throw new RuntimeException("Ya existe un permiso con ese nombre");
+            throw new DuplicateResourceException("Ya existe un permiso con ese nombre");
         }
         Permission newPermission = new Permission();
         newPermission.setName(permissionRequest.getName());
@@ -45,10 +48,10 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional
     @Override
     public BaseResponse<PermissionResponse> updatePermission(Integer id, PermissionUpdateRequest permissionRequest) {
-        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe el permiso especificado"));
+        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe el permiso especificado"));
         Optional<Permission> permissionExist = permissionRepository.findByNameIgnoreCase(permissionRequest.getName());
         if (permissionExist.isPresent() && !permissionExist.get().getId().equals(id)) {
-            throw new RuntimeException("Ya existe un permiso con ese nombre");
+            throw new DuplicateResourceException("Ya existe un permiso con ese nombre");
         }
         permission.setName(permissionRequest.getName());
         permission.setUpdatedAt(LocalDateTime.now());
@@ -66,7 +69,7 @@ public class PermissionServiceImpl implements PermissionService {
     public BaseResponse<List<PermissionResponse>> getAllPermissions() {
         List<Permission> permissions = permissionRepository.findByIsActiveTrue();
         if (permissions.isEmpty()) {
-            throw new RuntimeException("No hay informacion disponible");
+            throw new ResourceNotFoundException("No hay informacion disponible");
         }
         List<PermissionResponse> permissionsModified = permissions.stream().map(this::mapToResponse).toList();
         return BaseResponse.<List<PermissionResponse>>builder()
@@ -78,7 +81,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public BaseResponse<PermissionResponse> getById(Integer id) {
-        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new RuntimeException("No se encontro el permiso con ese id"));
+        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No se encontro el permiso con ese id"));
         PermissionResponse permissionModified = mapToResponse(permission);
 
         return BaseResponse.<PermissionResponse>builder()
@@ -90,7 +93,10 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public BaseResponse<Void> deletePermission(Integer id) {
-        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe el permiso con ese id"));
+        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe el permiso con ese id"));
+        if (!permission.getIsActive()) {
+            throw new BadRequestException("El permisio ya se encuentra eliminado");
+        }
         permission.setIsActive(false);
         permissionRepository.save(permission);
 

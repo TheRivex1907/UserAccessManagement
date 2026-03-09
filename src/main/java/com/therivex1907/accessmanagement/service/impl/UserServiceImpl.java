@@ -7,6 +7,9 @@ import com.therivex1907.accessmanagement.dto.user.UserSearchFilter;
 import com.therivex1907.accessmanagement.dto.user.UserUpdateRequest;
 import com.therivex1907.accessmanagement.entity.Role;
 import com.therivex1907.accessmanagement.entity.User;
+import com.therivex1907.accessmanagement.exception.BadRequestException;
+import com.therivex1907.accessmanagement.exception.DuplicateResourceException;
+import com.therivex1907.accessmanagement.exception.ResourceNotFoundException;
 import com.therivex1907.accessmanagement.mapper.UserMapper;
 import com.therivex1907.accessmanagement.repository.RoleRepository;
 import com.therivex1907.accessmanagement.repository.UserRepository;
@@ -40,7 +43,7 @@ public class UserServiceImpl implements UserService {
     public BaseResponse<UserResponse> createUser(UserCreateRequest userRequest) {
         Optional<User> user = userRepository.findByEmail(userRequest.getEmail());
         if (user.isPresent()) {
-            throw new RuntimeException("Ya existe un usuario con ese correo");
+            throw new DuplicateResourceException("Ya existe un usuario con ese correo");
         }
 
         User newUser = new User();
@@ -48,7 +51,7 @@ public class UserServiceImpl implements UserService {
         if (userRequest.getRolesId() != null && !userRequest.getRolesId().isEmpty()) {
             Set<Role> roles = new HashSet<>(roleRepository.findAllById(userRequest.getRolesId()));
             if (roles.size() != userRequest.getRolesId().size()) {
-                throw new RuntimeException("Uno o más roles no existen");
+                throw new ResourceNotFoundException("Uno o más roles no existen");
             }
             newUser.setRolesAssigned(roles);
         } else {
@@ -74,12 +77,12 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @Override
     public BaseResponse<UserResponse> updateUser(Integer id, UserUpdateRequest userRequest) {
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe aquel usuario"));
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe aquel usuario"));
         userMapper.updateUserFromDto(userRequest, user);
         if(userRequest.getEmail() != null) {
             Optional<User> userExistEmail = userRepository.findByEmail(userRequest.getEmail());
             if (userExistEmail.isPresent() && !userExistEmail.get().getId().equals(id)) {
-                throw new RuntimeException("Ya existe un usuario con ese correo");
+                throw new DuplicateResourceException("Ya existe un usuario con ese correo");
             }
             user.setEmail(user.getEmail());
         }
@@ -89,7 +92,7 @@ public class UserServiceImpl implements UserService {
         if (userRequest.getRolesId() != null && !userRequest.getRolesId().isEmpty()) {
             Set<Role> newRoles = new HashSet<>(roleRepository.findAllById(userRequest.getRolesId()));
             if (newRoles.size() != userRequest.getRolesId().size()) {
-                throw new RuntimeException("Uno o más roles no existen");
+                throw new ResourceNotFoundException("Uno o más roles no existen");
             }
             user.setRolesAssigned(newRoles);
         }
@@ -117,7 +120,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public BaseResponse<UserResponse> getById(Integer id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("No se encontró el usuario"));
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No se encontró el usuario"));
         UserResponse userModified = mapToResponse(user);
         return BaseResponse.<UserResponse>builder()
                 .status(HttpStatus.OK.value())
@@ -133,7 +136,7 @@ public class UserServiceImpl implements UserService {
         if (email != null && !email.isBlank()) email = "%" + email.toLowerCase() + "%";
         List<User> users = userRepository.searchUser(lastName, email);
         if (users.isEmpty())
-            throw new RuntimeException("No se encontró la informacion deseada");
+            throw new ResourceNotFoundException("No se encontró la informacion deseada");
         List<UserResponse> usersModified = users.stream().map(this::mapToResponse).toList();
         return BaseResponse.<List<UserResponse>>builder()
                 .status(HttpStatus.OK.value())
@@ -144,9 +147,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public BaseResponse<Void> deleteById(Integer id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("No se encontró el usuario"));
+        User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No se encontró el usuario"));
         if (!user.getIsActive()) {
-            throw new RuntimeException("El usuario ya se encuentra eliminado");
+            throw new BadRequestException("El usuario ya se encuentra eliminado");
         }
         user.setIsActive(false);
         user.setUpdateAt(LocalDateTime.now());
