@@ -41,7 +41,7 @@ public class RoleServiceImpl implements RoleService {
         if (roleExist.isPresent()) {
             throw new DuplicateResourceException("Ya existe un rol con ese nombre");
         }
-        Role newRole = new Role();
+        Role newRole = roleMapper.createFromDto(roleRequest);
         if (roleRequest.getPermissionsId() != null && !roleRequest.getPermissionsId().isEmpty()) {
             Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(roleRequest.getPermissionsId()));
             if (permissions.size() != roleRequest.getPermissionsId().size()) {
@@ -51,10 +51,6 @@ public class RoleServiceImpl implements RoleService {
         } else {
             newRole.setPermissionsAssigned(new HashSet<>());
         }
-        newRole.setName(roleRequest.getName());
-        newRole.setCreatedAt(LocalDateTime.now());
-        newRole.setIsActive(true);
-        //newRole.setPermissionsAssigned(permissions);
         roleRepository.save(newRole);
 
         RoleResponse roleModified = mapToResponse(newRole);
@@ -83,9 +79,8 @@ public class RoleServiceImpl implements RoleService {
             }
             role.setPermissionsAssigned(permissions);
         }
-        role.setUpdatedAt(LocalDateTime.now());
         roleMapper.updateRoleFromDto(roleRequest, role);
-        roleRepository.save(role);
+        roleRepository.saveAndFlush(role);
         RoleResponse roleModified = mapToResponse(role);
         return BaseResponse.<RoleResponse>builder()
                 .status(HttpStatus.OK.value())
@@ -127,6 +122,7 @@ public class RoleServiceImpl implements RoleService {
                 .build();
     }
 
+    @Transactional
     @Override
     public BaseResponse<Void> deleteRole(Integer id) {
         Role role = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe aquel rol"));
@@ -134,7 +130,6 @@ public class RoleServiceImpl implements RoleService {
             throw new BadRequestException("El rol ya esta eliminado");
         }
         role.setIsActive(false);
-        role.setUpdatedAt(LocalDateTime.now());
         roleRepository.save(role);
         return BaseResponse.<Void>builder()
                 .status(HttpStatus.OK.value())

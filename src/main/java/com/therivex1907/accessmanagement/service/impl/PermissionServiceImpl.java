@@ -33,8 +33,6 @@ public class PermissionServiceImpl implements PermissionService {
         }
         Permission newPermission = new Permission();
         newPermission.setName(permissionRequest.getName());
-        newPermission.setIsActive(true);
-        newPermission.setCreatedAt(LocalDateTime.now());
         permissionRepository.save(newPermission);
 
         PermissionResponse permissionModified = mapToResponse(newPermission);
@@ -54,8 +52,7 @@ public class PermissionServiceImpl implements PermissionService {
             throw new DuplicateResourceException("Ya existe un permiso con ese nombre");
         }
         permission.setName(permissionRequest.getName());
-        permission.setUpdatedAt(LocalDateTime.now());
-        permissionRepository.save(permission);
+        permissionRepository.saveAndFlush(permission);
         PermissionResponse permissionModified = mapToResponse(permission);
 
         return BaseResponse.<PermissionResponse>builder()
@@ -91,6 +88,7 @@ public class PermissionServiceImpl implements PermissionService {
                 .build();
     }
 
+    @Transactional
     @Override
     public BaseResponse<Void> deletePermission(Integer id) {
         Permission permission = permissionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe el permiso con ese id"));

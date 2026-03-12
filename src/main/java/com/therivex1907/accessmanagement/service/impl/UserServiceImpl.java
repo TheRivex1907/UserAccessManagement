@@ -46,7 +46,7 @@ public class UserServiceImpl implements UserService {
             throw new DuplicateResourceException("Ya existe un usuario con ese correo");
         }
 
-        User newUser = new User();
+        User newUser = userMapper.createFromDto(userRequest);
         String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
         if (userRequest.getRolesId() != null && !userRequest.getRolesId().isEmpty()) {
             Set<Role> roles = new HashSet<>(roleRepository.findAllById(userRequest.getRolesId()));
@@ -57,13 +57,7 @@ public class UserServiceImpl implements UserService {
         } else {
             newUser.setRolesAssigned(new HashSet<>());
         }
-        newUser.setFirstName(userRequest.getFirstName());
-        newUser.setLastName(userRequest.getLastName());
-        newUser.setEmail(userRequest.getEmail());
         newUser.setPassword(encodedPassword);
-        newUser.setPhoneNumber(userRequest.getPhoneNumber());
-        newUser.setCreatedAt(LocalDateTime.now());
-        newUser.setIsActive(true);
         userRepository.save(newUser);
 
         UserResponse userModified = mapToResponse(newUser);
@@ -84,7 +78,7 @@ public class UserServiceImpl implements UserService {
             if (userExistEmail.isPresent() && !userExistEmail.get().getId().equals(id)) {
                 throw new DuplicateResourceException("Ya existe un usuario con ese correo");
             }
-            user.setEmail(user.getEmail());
+            user.setEmail(userRequest.getEmail());
         }
         if (userRequest.getPassword() != null && !userRequest.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
@@ -96,8 +90,7 @@ public class UserServiceImpl implements UserService {
             }
             user.setRolesAssigned(newRoles);
         }
-        user.setUpdateAt(LocalDateTime.now());
-        userRepository.save(user);
+        userRepository.saveAndFlush(user);
 
         UserResponse userModified = mapToResponse(user);
         return BaseResponse.<UserResponse>builder()
@@ -145,6 +138,7 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    @Transactional
     @Override
     public BaseResponse<Void> deleteById(Integer id) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No se encontró el usuario"));
@@ -152,7 +146,6 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("El usuario ya se encuentra eliminado");
         }
         user.setIsActive(false);
-        user.setUpdateAt(LocalDateTime.now());
         userRepository.save(user);
         return BaseResponse.<Void>builder()
                 .status(HttpStatus.OK.value())
@@ -169,7 +162,7 @@ public class UserServiceImpl implements UserService {
         userResponse.setPhoneNumber(user.getPhoneNumber());
         userResponse.setIsActive(user.getIsActive());
         userResponse.setCreatedAt(user.getCreatedAt());
-        userResponse.setUpdateAt(user.getUpdateAt());
+        userResponse.setUpdateAt(user.getUpdatedAt());
         userResponse.setRolesId(user.getRolesAssigned().stream().map(Role::getId).collect(Collectors.toSet()));
         return userResponse;
     }
