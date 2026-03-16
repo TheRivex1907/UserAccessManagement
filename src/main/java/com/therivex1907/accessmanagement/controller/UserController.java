@@ -1,6 +1,7 @@
 package com.therivex1907.accessmanagement.controller;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.dto.PageResponse;
 import com.therivex1907.accessmanagement.dto.user.UserCreateRequest;
 import com.therivex1907.accessmanagement.dto.user.UserResponse;
 import com.therivex1907.accessmanagement.dto.user.UserSearchFilter;
@@ -8,6 +9,7 @@ import com.therivex1907.accessmanagement.dto.user.UserUpdateRequest;
 import com.therivex1907.accessmanagement.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,14 +41,14 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<UserResponse>>> getAllUsers() {
-        BaseResponse<List<UserResponse>> response = userService.getAllUsers();
+    public ResponseEntity<BaseResponse<PageResponse<UserResponse>>> getAllUsers(Pageable pageable) {
+        BaseResponse<PageResponse<UserResponse>> response = userService.getAllUsers(pageable);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PostMapping("/search")
-    public ResponseEntity<BaseResponse<List<UserResponse>>> getUsersFilter(@RequestBody UserSearchFilter filter) {
-        BaseResponse<List<UserResponse>> response = userService.searchUsers(filter);
+    public ResponseEntity<BaseResponse<PageResponse<UserResponse>>> getUsersFilter(@RequestBody UserSearchFilter filter, Pageable pageable) {
+        BaseResponse<PageResponse<UserResponse>> response = userService.searchUsers(filter, pageable);
         return  ResponseEntity.status(response.getStatus()).body(response);
     }
 

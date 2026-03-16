@@ -1,6 +1,7 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.dto.PageResponse;
 import com.therivex1907.accessmanagement.dto.permission.PermissionCreateRequest;
 import com.therivex1907.accessmanagement.dto.permission.PermissionResponse;
 import com.therivex1907.accessmanagement.dto.permission.PermissionUpdateRequest;
@@ -11,6 +12,8 @@ import com.therivex1907.accessmanagement.exception.ResourceNotFoundException;
 import com.therivex1907.accessmanagement.repository.PermissionRepository;
 import com.therivex1907.accessmanagement.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,11 +50,13 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public BaseResponse<PermissionResponse> updatePermission(Integer id, PermissionUpdateRequest permissionRequest) {
         Permission permission = permissionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe el permiso especificado"));
-        Optional<Permission> permissionExist = permissionRepository.findByNameIgnoreCase(permissionRequest.getName());
-        if (permissionExist.isPresent() && !permissionExist.get().getId().equals(id)) {
-            throw new DuplicateResourceException("Ya existe un permiso con ese nombre");
+        if (permission.getName() != null)  {
+            Optional<Permission> permissionExist = permissionRepository.findByNameIgnoreCase(permissionRequest.getName());
+            if (permissionExist.isPresent() && !permissionExist.get().getId().equals(id)) {
+                throw new DuplicateResourceException("Ya existe un permiso con ese nombre");
+            }
+            permission.setName(permissionRequest.getName());
         }
-        permission.setName(permissionRequest.getName());
         permissionRepository.saveAndFlush(permission);
         PermissionResponse permissionModified = mapToResponse(permission);
 
@@ -63,13 +68,16 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public BaseResponse<List<PermissionResponse>> getAllPermissions() {
-        List<Permission> permissions = permissionRepository.findByIsActiveTrue();
-        if (permissions.isEmpty()) {
-            throw new ResourceNotFoundException("No hay informacion disponible");
-        }
-        List<PermissionResponse> permissionsModified = permissions.stream().map(this::mapToResponse).toList();
-        return BaseResponse.<List<PermissionResponse>>builder()
+    public BaseResponse<PageResponse<PermissionResponse>> getAllPermissions(Pageable pageable) {
+        Page<Permission> permissions = permissionRepository.findByIsActiveTrue(pageable);
+        PageResponse<PermissionResponse> permissionsModified = new PageResponse<>(
+                permissions.getContent().stream().map(this::mapToResponse).toList(),
+                permissions.getNumber(),
+                permissions.getSize(),
+                (int) permissions.getTotalElements(),
+                permissions.getTotalPages()
+        );
+        return BaseResponse.<PageResponse<PermissionResponse>>builder()
                 .status(HttpStatus.OK.value())
                 .message("Informacion encontrada")
                 .data(permissionsModified)

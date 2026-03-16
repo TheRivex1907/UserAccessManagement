@@ -1,6 +1,7 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.dto.PageResponse;
 import com.therivex1907.accessmanagement.dto.role.RoleCreateRequest;
 import com.therivex1907.accessmanagement.dto.role.RoleResponse;
 import com.therivex1907.accessmanagement.dto.role.RoleUpdateRequest;
@@ -14,10 +15,12 @@ import com.therivex1907.accessmanagement.repository.PermissionRepository;
 import com.therivex1907.accessmanagement.repository.RoleRepository;
 import com.therivex1907.accessmanagement.service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +40,7 @@ public class RoleServiceImpl implements RoleService {
     @Transactional
     @Override
     public BaseResponse<RoleResponse> createRole(RoleCreateRequest roleRequest) {
-        Optional<Role> roleExist = roleRepository.findByNameContainingIgnoreCase(roleRequest.getName());
+        Optional<Role> roleExist = roleRepository.findByNameIgnoreCase(roleRequest.getName());
         if (roleExist.isPresent()) {
             throw new DuplicateResourceException("Ya existe un rol con ese nombre");
         }
@@ -66,13 +69,13 @@ public class RoleServiceImpl implements RoleService {
     public BaseResponse<RoleResponse> updateRole(Integer id, RoleUpdateRequest roleRequest) {
         Role role = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe un rol con ese id"));
         if (roleRequest.getName() != null) {
-            Optional<Role> roleExist = roleRepository.findByNameContainingIgnoreCase(roleRequest.getName());
+            Optional<Role> roleExist = roleRepository.findByNameIgnoreCase(roleRequest.getName());
             if (roleExist.isPresent() && !roleExist.get().getId().equals(id)) {
                 throw new DuplicateResourceException("Ya existe un rol con ese nombre");
             }
             role.setName(roleRequest.getName());
         }
-        if (roleRequest.getPermissionsId() != null && !roleRequest.getPermissionsId().isEmpty()) {
+        if (roleRequest.getPermissionsId() != null) {
             Set<Permission> permissions = new HashSet<>(permissionRepository.findAllById(roleRequest.getPermissionsId()));
             if (permissions.size() != roleRequest.getPermissionsId().size()) {
                 throw new ResourceNotFoundException("Uno o mas permisos no existen");
@@ -90,10 +93,16 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public BaseResponse<List<RoleResponse>> getAll() {
-        List<Role> roles = roleRepository.findByIsActiveTrue();
-        List<RoleResponse> rolesModified = roles.stream().map(this::mapToResponse).toList();
-        return BaseResponse.<List<RoleResponse>>builder()
+    public BaseResponse<PageResponse<RoleResponse>> getAll(Pageable pageable) {
+        Page<Role> roles = roleRepository.findAll(pageable);
+        PageResponse<RoleResponse> rolesModified = new PageResponse<>(
+                roles.getContent().stream().map(this::mapToResponse).toList(),
+                roles.getNumber(),
+                roles.getSize(),
+                (int) roles.getTotalElements(),
+                roles.getTotalPages()
+        );
+        return BaseResponse.<PageResponse<RoleResponse>>builder()
                 .status(HttpStatus.OK.value())
                 .message("Ok")
                 .data(rolesModified)
@@ -112,13 +121,19 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public BaseResponse<RoleResponse> getByName(String name) {
-        Role role = roleRepository.findByNameContainingIgnoreCase(name).orElseThrow(()-> new ResourceNotFoundException("No existe el rol con ese nombre"));
-        RoleResponse roleModified = mapToResponse(role);
-        return BaseResponse.<RoleResponse>builder()
+    public BaseResponse<PageResponse<RoleResponse>> getByName(String name, Pageable pageable) {
+        Page<Role> roles = roleRepository.findByNameContainingIgnoreCase(name, pageable);
+        PageResponse<RoleResponse> rolesModified = new PageResponse<>(
+                roles.getContent().stream().map(this::mapToResponse).toList(),
+                roles.getNumber(),
+                roles.getSize(),
+                (int) roles.getTotalElements(),
+                roles.getTotalPages()
+        );
+        return BaseResponse.<PageResponse<RoleResponse>>builder()
                 .status(HttpStatus.OK.value())
-                .message("Rol encontrado")
-                .data(roleModified)
+                .message("Roles encontrados")
+                .data(rolesModified)
                 .build();
     }
 

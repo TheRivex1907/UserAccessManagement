@@ -1,6 +1,7 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.dto.PageResponse;
 import com.therivex1907.accessmanagement.dto.user.UserCreateRequest;
 import com.therivex1907.accessmanagement.dto.user.UserResponse;
 import com.therivex1907.accessmanagement.dto.user.UserSearchFilter;
@@ -15,6 +16,8 @@ import com.therivex1907.accessmanagement.repository.RoleRepository;
 import com.therivex1907.accessmanagement.repository.UserRepository;
 import com.therivex1907.accessmanagement.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -101,13 +104,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public BaseResponse<List<UserResponse>> getAllUsers() {
-        List<User> users = userRepository.findByIsActiveTrue();
-        List<UserResponse> usersModified = users.stream().map(this::mapToResponse).toList();
-        return BaseResponse.<List<UserResponse>>builder()
+    public BaseResponse<PageResponse<UserResponse>> getAllUsers(Pageable pageable) {
+        Page<User> users = userRepository.findAll(pageable);
+        PageResponse<UserResponse> usersModifies = new PageResponse<>(
+                users.getContent().stream().map(this::mapToResponse).toList(),
+                users.getNumber(),
+                users.getSize(),
+                (int) users.getTotalElements(),
+                users.getTotalPages()
+        );
+        return BaseResponse.<PageResponse<UserResponse>>builder()
                 .status(HttpStatus.OK.value())
                 .message("Ok")
-                .data(usersModified)
+                .data(usersModifies)
                 .build();
     }
 
@@ -123,18 +132,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public BaseResponse<List<UserResponse>> searchUsers(UserSearchFilter filter) {
+    public BaseResponse<PageResponse<UserResponse>> searchUsers(UserSearchFilter filter, Pageable pageable) {
         String lastName = filter.getLastName(), email = filter.getEmail();
         if (lastName != null && !lastName.isBlank()) lastName = "%" + lastName.toLowerCase() + "%";
         if (email != null && !email.isBlank()) email = "%" + email.toLowerCase() + "%";
-        List<User> users = userRepository.searchUser(lastName, email);
-        if (users.isEmpty())
-            throw new ResourceNotFoundException("No se encontró la informacion deseada");
-        List<UserResponse> usersModified = users.stream().map(this::mapToResponse).toList();
-        return BaseResponse.<List<UserResponse>>builder()
+        Page<User> users = userRepository.searchUser(lastName, email, pageable);
+        PageResponse<UserResponse> usersModifies = new PageResponse<>(
+                users.getContent().stream().map(this::mapToResponse).toList(),
+                users.getNumber(),
+                users.getSize(),
+                (int) users.getTotalElements(),
+                users.getTotalPages()
+        );
+        return BaseResponse.<PageResponse<UserResponse>>builder()
                 .status(HttpStatus.OK.value())
                 .message("Información encontrada")
-                .data(usersModified)
+                .data(usersModifies)
                 .build();
     }
 

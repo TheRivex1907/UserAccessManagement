@@ -1,12 +1,14 @@
 package com.therivex1907.accessmanagement.controller;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.dto.PageResponse;
 import com.therivex1907.accessmanagement.dto.permission.PermissionCreateRequest;
 import com.therivex1907.accessmanagement.dto.permission.PermissionResponse;
 import com.therivex1907.accessmanagement.dto.permission.PermissionUpdateRequest;
 import com.therivex1907.accessmanagement.service.PermissionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,8 +21,8 @@ public class PermissionController {
     private PermissionService permissionService;
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<PermissionResponse>>> findAll() {
-        BaseResponse<List<PermissionResponse>> response = permissionService.getAllPermissions();
+    public ResponseEntity<BaseResponse<PageResponse<PermissionResponse>>> findAll(Pageable pageable) {
+        BaseResponse<PageResponse<PermissionResponse>> response = permissionService.getAllPermissions(pageable);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
