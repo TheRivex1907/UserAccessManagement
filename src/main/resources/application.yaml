@@ -23,3 +23,5 @@ logging:
     org:
       hibernate:
         SQL: DEBUG
+jwt:
+  secret: "TheRivex1907_Alonso_QAZWSXEDC2026"

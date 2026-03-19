@@ -1,6 +1,7 @@
 package com.therivex1907.accessmanagement.controller;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.dto.PageResponse;
 import com.therivex1907.accessmanagement.dto.role.RoleCreateRequest;
 import com.therivex1907.accessmanagement.dto.role.RoleResponse;
 import com.therivex1907.accessmanagement.dto.role.RoleUpdateRequest;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @RestController
@@ -20,61 +22,37 @@ public class RoleController {
 
     @GetMapping("/{id}")
     public ResponseEntity<BaseResponse<RoleResponse>> getById(@PathVariable Integer id) {
-        try {
-            BaseResponse<RoleResponse> response = roleService.getById(id);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<RoleResponse> response = roleService.getById(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @GetMapping("/search")
-    public ResponseEntity<BaseResponse<RoleResponse>> getByName(@RequestParam("name") String name) {
-        try {
-            BaseResponse<RoleResponse> response = roleService.getByName(name);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public ResponseEntity<BaseResponse<PageResponse<RoleResponse>>> getByName(@RequestParam("name") String name, Pageable pageable) {
+        BaseResponse<PageResponse<RoleResponse>> response = roleService.getByName(name, pageable);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
-    @GetMapping()
-    public ResponseEntity<BaseResponse<List<RoleResponse>>> getAll() {
-        try {
-            BaseResponse<List<RoleResponse>> response = roleService.getAll();
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    @GetMapping
+    public ResponseEntity<BaseResponse<PageResponse<RoleResponse>>> getAll(Pageable pageable) {
+        BaseResponse<PageResponse<RoleResponse>> response = roleService.getAll(pageable);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PostMapping
     public ResponseEntity<BaseResponse<RoleResponse>> createRole(@Valid @RequestBody RoleCreateRequest roleRequest) {
-        try {
-            BaseResponse<RoleResponse> response = roleService.createRole(roleRequest);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<RoleResponse> response = roleService.createRole(roleRequest);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<BaseResponse<RoleResponse>> updateRole(@PathVariable Integer id, @Valid @RequestBody RoleUpdateRequest roleRequest) {
-        try {
-            BaseResponse<RoleResponse> response = roleService.updateRole(id, roleRequest);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<RoleResponse> response = roleService.updateRole(id, roleRequest);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<BaseResponse<Void>> deleteRole(@PathVariable Integer id) {
-        try {
-            BaseResponse<Void> response = roleService.deleteRole(id);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<Void> response = roleService.deleteRole(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

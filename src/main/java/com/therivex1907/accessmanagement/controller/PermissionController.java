@@ -1,12 +1,14 @@
 package com.therivex1907.accessmanagement.controller;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.dto.PageResponse;
 import com.therivex1907.accessmanagement.dto.permission.PermissionCreateRequest;
 import com.therivex1907.accessmanagement.dto.permission.PermissionResponse;
 import com.therivex1907.accessmanagement.dto.permission.PermissionUpdateRequest;
 import com.therivex1907.accessmanagement.service.PermissionService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,52 +21,32 @@ public class PermissionController {
     private PermissionService permissionService;
 
     @GetMapping
-    public ResponseEntity<BaseResponse<List<PermissionResponse>>> findAll() {
-        try {
-            BaseResponse<List<PermissionResponse>> response = permissionService.getAllPermissions();
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public ResponseEntity<BaseResponse<PageResponse<PermissionResponse>>> findAll(Pageable pageable) {
+        BaseResponse<PageResponse<PermissionResponse>> response = permissionService.getAllPermissions(pageable);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @GetMapping("{id}")
     public ResponseEntity<BaseResponse<PermissionResponse>> getById(@PathVariable Integer id) {
-        try {
-            BaseResponse<PermissionResponse> response = permissionService.getById(id);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<PermissionResponse> response = permissionService.getById(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PostMapping
     public ResponseEntity<BaseResponse<PermissionResponse>> createPermission(@Valid @RequestBody PermissionCreateRequest permissionRequest) {
-        try {
-            BaseResponse<PermissionResponse> response = permissionService.createPermission(permissionRequest);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<PermissionResponse> response = permissionService.createPermission(permissionRequest);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<BaseResponse<PermissionResponse>> updatePermission(@PathVariable Integer id, @Valid @RequestBody PermissionUpdateRequest permissionRequest) {
-        try {
-            BaseResponse<PermissionResponse> response = permissionService.updatePermission(id, permissionRequest);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<PermissionResponse> response = permissionService.updatePermission(id, permissionRequest);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<BaseResponse<Void>> deletePermission(@PathVariable Integer id) {
-        try {
-            BaseResponse<Void> response = permissionService.deletePermission(id);
-            return ResponseEntity.status(response.getStatus()).body(response);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        BaseResponse<Void> response = permissionService.deletePermission(id);
+        return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

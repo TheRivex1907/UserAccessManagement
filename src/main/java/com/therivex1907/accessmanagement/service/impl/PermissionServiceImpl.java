@@ -1,13 +1,19 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.dto.PageResponse;
 import com.therivex1907.accessmanagement.dto.permission.PermissionCreateRequest;
 import com.therivex1907.accessmanagement.dto.permission.PermissionResponse;
 import com.therivex1907.accessmanagement.dto.permission.PermissionUpdateRequest;
 import com.therivex1907.accessmanagement.entity.Permission;
+import com.therivex1907.accessmanagement.exception.BadRequestException;
+import com.therivex1907.accessmanagement.exception.DuplicateResourceException;
+import com.therivex1907.accessmanagement.exception.ResourceNotFoundException;
 import com.therivex1907.accessmanagement.repository.PermissionRepository;
 import com.therivex1907.accessmanagement.service.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,12 +32,10 @@ public class PermissionServiceImpl implements PermissionService {
     public BaseResponse<PermissionResponse> createPermission(PermissionCreateRequest permissionRequest) {
         Optional<Permission> permission = permissionRepository.findByNameIgnoreCase(permissionRequest.getName());
         if (permission.isPresent()) {
-            throw new RuntimeException("Ya existe un permiso con ese nombre");
+            throw new DuplicateResourceException("Ya existe un permiso con ese nombre");
         }
         Permission newPermission = new Permission();
         newPermission.setName(permissionRequest.getName());
-        newPermission.setIsActive(true);
-        newPermission.setCreatedAt(LocalDateTime.now());
         permissionRepository.save(newPermission);
 
         PermissionResponse permissionModified = mapToResponse(newPermission);
@@ -45,14 +49,15 @@ public class PermissionServiceImpl implements PermissionService {
     @Transactional
     @Override
     public BaseResponse<PermissionResponse> updatePermission(Integer id, PermissionUpdateRequest permissionRequest) {
-        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe el permiso especificado"));
-        Optional<Permission> permissionExist = permissionRepository.findByNameIgnoreCase(permissionRequest.getName());
-        if (permissionExist.isPresent() && !permissionExist.get().getId().equals(id)) {
-            throw new RuntimeException("Ya existe un permiso con ese nombre");
+        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe el permiso especificado"));
+        if (permission.getName() != null)  {
+            Optional<Permission> permissionExist = permissionRepository.findByNameIgnoreCase(permissionRequest.getName());
+            if (permissionExist.isPresent() && !permissionExist.get().getId().equals(id)) {
+                throw new DuplicateResourceException("Ya existe un permiso con ese nombre");
+            }
+            permission.setName(permissionRequest.getName());
         }
-        permission.setName(permissionRequest.getName());
-        permission.setUpdatedAt(LocalDateTime.now());
-        permissionRepository.save(permission);
+        permissionRepository.saveAndFlush(permission);
         PermissionResponse permissionModified = mapToResponse(permission);
 
         return BaseResponse.<PermissionResponse>builder()
@@ -63,13 +68,16 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public BaseResponse<List<PermissionResponse>> getAllPermissions() {
-        List<Permission> permissions = permissionRepository.findByIsActiveTrue();
-        if (permissions.isEmpty()) {
-            throw new RuntimeException("No hay informacion disponible");
-        }
-        List<PermissionResponse> permissionsModified = permissions.stream().map(this::mapToResponse).toList();
-        return BaseResponse.<List<PermissionResponse>>builder()
+    public BaseResponse<PageResponse<PermissionResponse>> getAllPermissions(Pageable pageable) {
+        Page<Permission> permissions = permissionRepository.findByIsActiveTrue(pageable);
+        PageResponse<PermissionResponse> permissionsModified = new PageResponse<>(
+                permissions.getContent().stream().map(this::mapToResponse).toList(),
+                permissions.getNumber(),
+                permissions.getSize(),
+                (int) permissions.getTotalElements(),
+                permissions.getTotalPages()
+        );
+        return BaseResponse.<PageResponse<PermissionResponse>>builder()
                 .status(HttpStatus.OK.value())
                 .message("Informacion encontrada")
                 .data(permissionsModified)
@@ -78,7 +86,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public BaseResponse<PermissionResponse> getById(Integer id) {
-        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new RuntimeException("No se encontro el permiso con ese id"));
+        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No se encontro el permiso con ese id"));
         PermissionResponse permissionModified = mapToResponse(permission);
 
         return BaseResponse.<PermissionResponse>builder()
@@ -88,9 +96,13 @@ public class PermissionServiceImpl implements PermissionService {
                 .build();
     }
 
+    @Transactional
     @Override
     public BaseResponse<Void> deletePermission(Integer id) {
-        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new RuntimeException("No existe el permiso con ese id"));
+        Permission permission = permissionRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe el permiso con ese id"));
+        if (!permission.getIsActive()) {
+            throw new BadRequestException("El permisio ya se encuentra eliminado");
+        }
         permission.setIsActive(false);
         permissionRepository.save(permission);
 
