@@ -3,6 +3,7 @@ package com.therivex1907.accessmanagement.exception;
 import com.therivex1907.accessmanagement.dto.BaseResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -40,8 +41,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    @ExceptionHandler(AccessException.class)
-    public ResponseEntity<BaseResponse<Void>> handleAccess(AccessException e) {
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<BaseResponse<Void>> handleAccess(AccessDeniedException e) {
         BaseResponse<Void> response = BaseResponse.<Void>builder()
                 .status(HttpStatus.FORBIDDEN.value())
                 .message(e.getMessage())
