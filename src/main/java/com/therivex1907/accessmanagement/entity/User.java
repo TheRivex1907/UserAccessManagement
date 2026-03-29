@@ -36,7 +36,7 @@ public class User {
     @NotBlank
     @Column(name = "phone_number", nullable = false)
     private String phoneNumber;
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "roles_assigned", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> rolesAssigned = new HashSet<>();;
     @Column(name = "is_active", nullable = false)

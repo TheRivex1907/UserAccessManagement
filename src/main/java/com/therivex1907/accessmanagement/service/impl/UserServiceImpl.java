@@ -19,6 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,7 +78,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public BaseResponse<UserResponse> updateUser(Integer id, UserUpdateRequest userRequest) {
         User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("No existe aquel usuario"));
-        userMapper.updateUserFromDto(userRequest, user);
+        //Validacion
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+
+        User currentUser = userRepository.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("No existe aquel usuario"));
+        Boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("USER_UPDATE_ALL"));
+
+        if (!isAdmin && !currentUser.getId().equals(id)) {
+            throw new AccessDeniedException("No puedes modificar este usuario");
+        }
+
         if(userRequest.getEmail() != null) {
             Optional<User> userExistEmail = userRepository.findByEmail(userRequest.getEmail());
             if (userExistEmail.isPresent() && !userExistEmail.get().getId().equals(id)) {
@@ -93,6 +106,7 @@ public class UserServiceImpl implements UserService {
             }
             user.setRolesAssigned(newRoles);
         }
+        userMapper.updateUserFromDto(userRequest, user);
         userRepository.saveAndFlush(user);
 
         UserResponse userModified = mapToResponse(user);

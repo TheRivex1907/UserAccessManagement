@@ -1,6 +1,7 @@
 package com.therivex1907.accessmanagement.controller;
 
 import com.therivex1907.accessmanagement.dto.AuthRequest;
+import com.therivex1907.accessmanagement.dto.AuthResponse;
 import com.therivex1907.accessmanagement.dto.BaseResponse;
 import com.therivex1907.accessmanagement.service.AuthService;
 import jakarta.validation.Valid;
@@ -18,8 +19,8 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<BaseResponse<String>> login(@Valid @RequestBody AuthRequest authRequest) {
-        BaseResponse<String> response = authService.login(authRequest);
+    public ResponseEntity<BaseResponse<AuthResponse>> login(@Valid @RequestBody AuthRequest authRequest) {
+        BaseResponse<AuthResponse> response = authService.login(authRequest);
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 }

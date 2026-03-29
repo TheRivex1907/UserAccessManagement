@@ -1,8 +1,13 @@
 package com.therivex1907.accessmanagement.service.impl;
 
 import com.therivex1907.accessmanagement.dto.AuthRequest;
+import com.therivex1907.accessmanagement.dto.AuthResponse;
+import com.therivex1907.accessmanagement.dto.AuthUserResponse;
 import com.therivex1907.accessmanagement.dto.BaseResponse;
+import com.therivex1907.accessmanagement.entity.Permission;
+import com.therivex1907.accessmanagement.entity.Role;
 import com.therivex1907.accessmanagement.entity.User;
+import com.therivex1907.accessmanagement.exception.ResourceNotFoundException;
 import com.therivex1907.accessmanagement.repository.UserRepository;
 import com.therivex1907.accessmanagement.service.AuthService;
 import com.therivex1907.accessmanagement.service.JwtService;
@@ -16,6 +21,8 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.stream.Collectors;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -35,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public BaseResponse<String> login(AuthRequest authRequest){
+    public BaseResponse<AuthResponse> login(AuthRequest authRequest){
         getAuthManager().authenticate(
                 new UsernamePasswordAuthenticationToken(
                         authRequest.getEmail(),
@@ -44,12 +51,26 @@ public class AuthServiceImpl implements AuthService {
         );
 
         User user = userRepository.findByEmail(authRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        String token = jwtService.generateToken(user);
 
-        return BaseResponse.<String>builder()
+        AuthUserResponse authUser = AuthUserResponse.builder()
+                .id(user.getId())
+                .name(user.getFirstName() + " " + user.getLastName())
+                .email(user.getEmail())
+                .roles(user.getRolesAssigned().stream().filter(Role::getIsActive).map(Role::getName).collect(Collectors.toSet()))
+                .permissions(user.getRolesAssigned().stream().filter(Role::getIsActive).flatMap(role -> role.getPermissionsAssigned().stream())
+                        .filter(Permission::getIsActive)
+                        .map(Permission::getName)
+                        .collect(Collectors.toSet()))
+                .build();
+
+        AuthResponse response = new AuthResponse(token, "Bearer", authUser);
+
+        return BaseResponse.<AuthResponse>builder()
                 .status(HttpStatus.OK.value())
                 .message("Login exitoso")
-                .data(jwtService.generateToken(user))
+                .data(response)
                 .build();
     }
 }
